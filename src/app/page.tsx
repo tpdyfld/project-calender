@@ -1,65 +1,79 @@
-import Image from "next/image";
+'use client';
+
+import React from 'react';
+import { useProject } from '../context/ProjectContext';
+import { useAuth } from '../context/AuthContext';
+import Sidebar from '../components/layout/Sidebar';
+import Header from '../components/layout/Header';
+import DashboardView from '../components/dashboard/DashboardView';
+import TodoView from '../components/todo/TodoView';
+import TasksView from '../components/tasks/TasksView';
+import BugsView from '../components/bugs/BugsView';
+import MeetingsView from '../components/meetings/MeetingsView';
+import TeamView from '../components/team/TeamView';
+import CalendarView from '../components/calendar/CalendarView';
+import AuthView from '../components/auth/AuthView';
 
 export default function Home() {
+  const { activeTab } = useProject();
+  const { currentUser, isAuthLoading } = useAuth();
+
+  // 1. 인증 정보 로딩 중일 경우 스켈레톤/로딩 렌더링
+  if (isAuthLoading) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-slate-950 text-slate-450 text-xs font-semibold">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 rounded-full border-2 border-indigo-550 border-t-transparent animate-spin" />
+          <span>보안 인증 동기화 중...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. 비로그인 상태일 경우 로그인/회원가입 폼 노출
+  if (!currentUser) {
+    return <AuthView />;
+  }
+
+  // activeTab 상태값에 따른 메인 본문 뷰 렌더링 스위처
+  const renderMainContent = () => {
+    switch (activeTab) {
+      case 'dashboard':
+        return <DashboardView />;
+      case 'todo':
+        return <TodoView />;
+      case 'tasks':
+        return <TasksView />;
+      case 'calendar':
+        return <CalendarView />;
+      case 'bugs':
+        return <BugsView />;
+      case 'meetings':
+        return <MeetingsView />;
+      case 'team':
+        return <TeamView />;
+      default:
+        return <DashboardView />;
+    }
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    <div className="flex h-screen w-screen overflow-hidden bg-slate-950 text-slate-100">
+      {/* 좌측 64px(w-64) 고정 사이드 바 */}
+      <Sidebar />
+
+      {/* 우측 메인 콘텐츠 레이아웃 영역 (헤더 + 본문) */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* 상단 16px(h-16) 유틸리티 헤더 */}
+        <Header />
+
+        {/* 하단 본문 스크롤 영역 */}
+        <main className="flex-1 overflow-hidden p-8 bg-slate-950">
+          <div className="h-full w-full max-w-none">
+            {renderMainContent()}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

@@ -1,0 +1,106 @@
+// DevFlow Manager Prisma Database Schema
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 1. 프로젝트 모델 (Project)
+model Project {
+  id          String    @id @default(uuid())
+  name        String
+  description String
+  startDate   String
+  dueDate     String
+  techStack   String[]
+  phase       String    // 'Planning' | 'Design' | 'Development' | 'Testing' | 'Deployment' | 'Completed'
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // 1:N 관계 매핑
+  tasks       Task[]
+  bugs        Bug[]
+  meetings    Meeting[]
+}
+
+// 2. 팀원 모델 (Member)
+model Member {
+  id          String    @id @default(uuid())
+  name        String
+  role        String    // 'PM' | 'Frontend' | 'Backend' | 'Fullstack' | 'Designer' | 'QA'
+  email       String    @unique
+  avatarColor String    // Tailwind 아바타 배경 클래스 (예: 'bg-indigo-500')
+  createdAt   DateTime  @default(now())
+
+  // 관계 설정 (1:N 역참조)
+  tasksAssigned Task[]  @relation("TaskAssignee")
+  bugsReported  Bug[]   @relation("BugReporter")
+  bugsAssigned  Bug[]   @relation("BugAssignee")
+}
+
+// 3. 작업 모델 (Task)
+model Task {
+  id          String    @id @default(uuid())
+  projectId   String
+  title       String
+  description String
+  assigneeId  String
+  status      String    // 'Backlog' | 'Todo' | 'In Progress' | 'Code Review' | 'Testing' | 'Done'
+  priority    String    // 'Low' | 'Medium' | 'High' | 'Critical'
+  category    String    // 'Planning' | 'UI' | 'Frontend' | 'Backend' | 'Database' | 'API' | 'Test' | 'Deploy'
+  startDate   String
+  dueDate     String
+  progress    Int       @default(0)
+  hasBlocker  Boolean   @default(false)
+  blockerText String?
+  memo        String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  order       Int?
+  riskOrder   Int?
+
+  // N:1 외래키 정의
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignee    Member    @relation("TaskAssignee", fields: [assigneeId], references: [id])
+}
+
+// 4. 버그 모델 (Bug)
+model Bug {
+  id             String    @id @default(uuid())
+  projectId      String
+  title          String
+  description    String
+  reporterId     String
+  assigneeId     String
+  severity       String    // 'Minor' | 'Major' | 'Critical'
+  status         String    // 'Open' | 'In Progress' | 'Fixed' | 'Closed'
+  reproduceSteps String
+  relatedArea    String
+  createdAt      DateTime  @default(now())
+  resolvedAt     DateTime?
+
+  // N:1 외래키 정의
+  project        Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  reporter       Member    @relation("BugReporter", fields: [reporterId], references: [id])
+  assignee       Member    @relation("BugAssignee", fields: [assigneeId], references: [id])
+}
+
+// 5. 회의록 모델 (Meeting)
+model Meeting {
+  id          String    @id @default(uuid())
+  projectId   String
+  title       String
+  date        String
+  attendees   String[]  // 참석 팀원 이름 목록
+  discussion  String
+  decisions   String
+  actionItems String
+  createdAt   DateTime  @default(now())
+
+  // N:1 외래키 정의
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
